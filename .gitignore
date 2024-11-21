@@ -1,0 +1,6 @@
+.vscode
+config.py
+uploads/*
+!uploads/.gitignore
+*__pycache__/*
+*/__pycache__/*
