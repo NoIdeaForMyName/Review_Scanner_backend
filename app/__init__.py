@@ -15,7 +15,7 @@ def create_app():
     
     jwt.init_app(app)
 
-    from app.routes import main_bp
+    from app.routes_guests import main_bp
     app.register_blueprint(main_bp)
 
     return app
