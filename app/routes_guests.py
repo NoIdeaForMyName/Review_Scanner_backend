@@ -46,21 +46,29 @@ def get_product_barcode(barcode):
 
 
 
-# @main_bp.route("/register", methods=["POST"])
-# def login():
-#     """
-#     Register user with email, nickname, password, and salt.
-#     """
-#     try:
-#         data = request.json
-#         user = User(
-#             email=data["email"],
-#             nickname=data["nickname"],
-#             password=data["password"],
-#             salt=data["salt"]
-#         )
-#         user.save()
-#         return jsonify({"message": "User registered successfully"}), 201
-#     except Exception as e:
-#         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+@main_bp.route("/register", methods=["POST"])
+def register():
+    """
+    Register user with email, nickname, password, and salt.
+    """
+    try:
+        data = request.json
+        check_email = User.query.filter_by(email=data["email"]).first()
+        if check_email:
+            return jsonify({"error": "Email already in use"}), 400
+        
+        check_nickname = User.query.filter_by(nickname=data["nickname"]).first()
+        if check_nickname:
+            return jsonify({"error": "Nickname already in use"}), 400
+        
+        user = User(
+            email=data["email"],
+            nickname=data["nickname"],
+            password=data["password"],
+            salt=data["salt"]
+        )
+        user.save()
+        return jsonify({"message": "User registered successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 

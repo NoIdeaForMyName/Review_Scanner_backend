@@ -3,6 +3,7 @@ from sqlalchemy import Row, func
 from sqlalchemy.orm import joinedload
 from app.models import db, User, Product, Review, ReviewMedia, Shop
 from flask import jsonify
+from config import UPLOAD_URL
 
 def review_to_dict(review: Review) -> dict:
     user = review.user
@@ -15,7 +16,8 @@ def review_to_dict(review: Review) -> dict:
             "email": user.email,
             "nickname": user.nickname,
         },
-        "product": review.review_product_fk,
+        "product_id": review.review_product_fk,
+        "product_name": review.product.product_name,
         "grade": review.review_grade,
         "title": review.review_title,
         "description": review.review_description,
@@ -27,7 +29,7 @@ def review_to_dict(review: Review) -> dict:
         "media": [
             {
                 "id": medium.id,
-                "url": medium.media_path,
+                "url": UPLOAD_URL + medium.media_path,
             }
             for medium in media
         ],
@@ -44,7 +46,7 @@ def product_short_to_dict(product: Product, avg_grade: float, grade_count: int) 
         'id': int(product.id),
         'name': product.product_name,
         'description': product.product_description,
-        'image': product.product_image,
+        'image': UPLOAD_URL + product.product_image,
         'barcode': product.product_barcode,
         'average_grade': float(avg_grade),
         'grade_count': int(grade_count),
