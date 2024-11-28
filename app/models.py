@@ -11,8 +11,8 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     salt = db.Column(db.String(255), unique=True, nullable=False)  
 
-    scan_history_products = db.relationship("ScanHistory", back_populates="user", lazy="joined")
-    reviews = db.relationship("Review", back_populates="user", lazy="joined")
+    scan_history_products = db.relationship("ScanHistory", back_populates="user", lazy="subqueryload")
+    reviews = db.relationship("Review", back_populates="user", lazy="subqueryload")
 
 # Products table
 class Product(db.Model):
@@ -23,8 +23,8 @@ class Product(db.Model):
     product_description = db.Column(db.Text, nullable=False)
     product_image = db.Column(db.String(255), nullable=False)
 
-    reviews = db.relationship("Review", back_populates="product", lazy="select")
-    scan_history_users = db.relationship("ScanHistory", back_populates="product", lazy="select")
+    reviews = db.relationship("Review", back_populates="product", lazy="subqueryload")
+    scan_history_users = db.relationship("ScanHistory", back_populates="product", lazy="subqueryload")
 
 
 # Shops table
@@ -33,7 +33,7 @@ class Shop(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     shop_name = db.Column(db.String(255), unique=True, nullable=False)
 
-    reviews = db.relationship("Review", back_populates="shop", lazy="select")
+    reviews = db.relationship("Review", back_populates="shop", lazy="subqueryload")
 
 
 # Reviews table
@@ -62,7 +62,7 @@ class ReviewMedia(db.Model):
     media_review_fk = db.Column(db.Integer, db.ForeignKey("Reviews.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False)
     media_path = db.Column(db.String(255), nullable=False)
 
-    review = db.relationship("Review", back_populates="media", lazy="select")
+    review = db.relationship("Review", back_populates="media", lazy="joined")
 
 
 # Scan History table
@@ -73,5 +73,5 @@ class ScanHistory(db.Model):
     scan_timestamp = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
     product = db.relationship("Product", back_populates="scan_history_users", lazy="joined")
-    user = db.relationship("User", back_populates="scan_history_products", lazy="select")
+    user = db.relationship("User", back_populates="scan_history_products", lazy="subqueryload")
     
