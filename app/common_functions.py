@@ -1,3 +1,5 @@
+from decimal import Decimal
+import hashlib
 from typing import Union
 from sqlalchemy import Row, func
 from sqlalchemy.orm import joinedload
@@ -21,7 +23,7 @@ def review_to_dict(review: Review) -> dict:
         "grade": review.review_grade,
         "title": review.review_title,
         "description": review.review_description,
-        "price": str(review.review_price),
+        "price": Decimal(review.review_price),
         "shop": {
             "id": shop.id,
             "name": shop.shop_name,
@@ -73,3 +75,10 @@ def get_product_with_stats_by_barcode(barcode: str) -> Union[None, Row[tuple[Pro
         .group_by(Product.id)  # Group by Product to calculate stats
         .first()
     )
+
+
+def hash_password(password: str, salt: str) -> str:
+    """
+    Hash a password using a salt.
+    """
+    return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()

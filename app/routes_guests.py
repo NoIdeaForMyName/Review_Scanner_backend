@@ -1,9 +1,33 @@
+import hashlib
+import os
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
-from app.models import User, Product, Review, ReviewMedia
-from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict
+from app.models import db, User, Product, Review, ReviewMedia
+from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password
 
 main_bp = Blueprint('main', __name__)
+
+@main_bp.route("/products/get_by_id_list", methods=["GET"])
+def get_products_by_id_list():
+    """
+    Fetch a list of products by ID (numeric).
+    """
+    try:
+        product_ids = request.args.get("product_ids")
+
+        if not product_ids:
+            return jsonify({"error": "Invalid data"}), 400
+
+        product_ids = product_ids.split(",")
+        product_ids = [int(product_id) for product_id in product_ids]
+        result = []
+        for product_id in product_ids:
+            product_data = get_product_with_stats(product_id)
+            if product_data:
+                result.append(product_reviews_to_dict(*product_data))
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 @main_bp.route("/products/<int:product_id>", methods=["GET"])
 def get_product(product_id):
@@ -25,13 +49,14 @@ def get_product(product_id):
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
-@main_bp.route("/products_barcode/<barcode>", methods=["GET"])
-def get_product_barcode(barcode):
+@main_bp.route("/products/get_by_barcode", methods=["GET"])
+def get_product_barcode():
     """
     Fetch a product by ID (numeric) or barcode (string).
     """
     try:
         # Determine if the identifier is numeric (ID) or not (barcode)
+        barcode = request.args.get("barcode")
         result = get_product_with_stats_by_barcode(str(barcode))
 
         # Handle case where product is not found
@@ -52,22 +77,32 @@ def register():
     Register user with email, nickname, password, and salt.
     """
     try:
-        data = request.json
-        check_email = User.query.filter_by(email=data["email"]).first()
+        email = request.args.get("email")
+        nickname = request.args.get("nickname")
+        password_raw = request.args.get("password")
+
+        if not email or not nickname or not password_raw:
+            return jsonify({"error": "Invalid data"}), 400
+
+        check_email = User.query.filter_by(email=email).first()
         if check_email:
-            return jsonify({"error": "Email already in use"}), 400
+            return jsonify({"error": "Email already in use"}), 409
         
-        check_nickname = User.query.filter_by(nickname=data["nickname"]).first()
+        check_nickname = User.query.filter_by(nickname=nickname).first()
         if check_nickname:
-            return jsonify({"error": "Nickname already in use"}), 400
+            return jsonify({"error": "Nickname already in use"}), 409
+        
+        salt = os.urandom(32).hex()
+        password = hash_password(password_raw, salt)
         
         user = User(
-            email=data["email"],
-            nickname=data["nickname"],
-            password=data["password"],
-            salt=data["salt"]
+            email=email,
+            nickname=nickname,
+            password=password,
+            salt=salt
         )
-        user.save()
+        db.session.add(user)
+        db.session.commit()
         return jsonify({"message": "User registered successfully"}), 201
     except Exception as e:
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
