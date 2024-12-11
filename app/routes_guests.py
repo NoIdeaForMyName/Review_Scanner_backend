@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 from app.models import db, User, Product, Review, ReviewMedia
 from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password
+from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, jwt_required, get_jwt_identity
 
 main_bp = Blueprint('main', __name__)
 
@@ -107,3 +108,24 @@ def register():
     except Exception as e:
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
+
+@main_bp.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password_raw = data.get("password")
+
+    if not email or not password_raw:
+        return jsonify({"error": "Invalid data"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.password != hash_password(password_raw, user.salt):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+
+    response = jsonify({"message": "Login successful"})
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+    return response, 200
