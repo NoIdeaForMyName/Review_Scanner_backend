@@ -3,9 +3,10 @@ import hashlib
 from typing import Union
 from sqlalchemy import Row, func
 from sqlalchemy.orm import joinedload
-from app.models import db, User, Product, Review, ReviewMedia, Shop
+from app.models import db, User, Product, Review, ReviewMedia, Shop, ScanHistory
 from flask import jsonify
 from config import UPLOAD_URL
+from datetime import datetime
 
 def review_to_dict(review: Review) -> dict:
     user = review.user
@@ -70,12 +71,35 @@ def get_product_with_stats_by_barcode(barcode: str) -> Union[None, Row[tuple[Pro
             Product,
             func.avg(Review.review_grade).label("avg_grade"),
             func.count(Review.review_grade).label("review_count")
-        ).outerjoin(Review, Review.review_product_fk == Product.id)
+        )
+        .outerjoin(Review, Review.review_product_fk == Product.id)
         .filter(Product.product_barcode == barcode)
         .group_by(Product.id)  # Group by Product to calculate stats
         .first()
     )
 
+def get_user_scan_history(user_id: int) -> Union[None, Row[tuple[Product, datetime]]]:
+    """
+    Fetch specific user scan history with product details.
+    """
+    return (
+        db.session.query(
+            Product,
+            ScanHistory.scan_timestamp #.label("scan_timestamp")
+        )
+        .outerjoin(ScanHistory, ScanHistory.scan_history_product_fk == Product.id)
+        .filter(ScanHistory.scan_history_user_fk == user_id)
+        .all()
+    )
+
+def scan_history_product_to_dict(product: Product, scan_timestamp: datetime) -> dict:
+    return {**model_to_dict(product), "scan_timestamp": scan_timestamp}
+
+def scan_history_product_to_list_dict(product_timestamp_list):
+    return [scan_history_product_to_dict(*e) for e in product_timestamp_list]
+
+def model_to_dict(model):
+    return {c.name: getattr(model, c.name) for c in model.__table__.columns}
 
 def hash_password(password: str, salt: str) -> str:
     """
