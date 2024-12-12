@@ -78,9 +78,10 @@ def register():
     Register user with email, nickname, password, and salt.
     """
     try:
-        email = request.args.get("email")
-        nickname = request.args.get("nickname")
-        password_raw = request.args.get("password")
+        data = request.get_json()
+        email = data.get("email")
+        nickname = data.get("nickname")
+        password_raw = data.get("password")
 
         if not email or not nickname or not password_raw:
             return jsonify({"error": "Invalid data"}), 400
