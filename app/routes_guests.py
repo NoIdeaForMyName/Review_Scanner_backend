@@ -79,7 +79,7 @@ def register():
     """
     try:
         data = request.get_json()
-        email = data.get("email")
+        email = data.get("email").lower()
         nickname = data.get("nickname")
         password_raw = data.get("password")
 
@@ -113,7 +113,7 @@ def register():
 @main_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-    email = data.get("email")
+    email = data.get("email").lower()
     password_raw = data.get("password")
 
     if not email or not password_raw:
