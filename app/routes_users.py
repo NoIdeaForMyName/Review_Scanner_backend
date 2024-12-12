@@ -42,4 +42,4 @@ def scan_history():
     if not result:
         return jsonify({"error": "Product not found"}), 404
 
-    return jsonify(scan_history_product_to_list_dict(result))
+    return jsonify(scan_history_product_to_list_dict(result)), 200
