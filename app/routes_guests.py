@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, set_ac
 
 main_bp = Blueprint('main', __name__)
 
-@main_bp.route("/products/get_by_id_list", methods=["GET"])
+@main_bp.route("/products/get-by-id-list", methods=["GET"])
 def get_products_by_id_list():
     """
     Fetch a list of products by ID (numeric).
@@ -50,7 +50,7 @@ def get_product(product_id):
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
-@main_bp.route("/products/get_by_barcode", methods=["GET"])
+@main_bp.route("/products/get-by-barcode", methods=["GET"])
 def get_product_barcode():
     """
     Fetch a product by ID (numeric) or barcode (string).
