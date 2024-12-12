@@ -4,3 +4,7 @@ uploads/*
 !uploads/.gitignore
 *__pycache__/*
 */__pycache__/*
+
+# temporary files
+TODO.txt
+test.py
