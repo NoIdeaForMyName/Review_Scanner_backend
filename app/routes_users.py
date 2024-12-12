@@ -9,14 +9,26 @@ from flask_jwt_extended import create_access_token, create_refresh_token, set_ac
 auth_bp = Blueprint('auth', __name__)
 
 
+#TODO: add product, add review, my revious
+
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     new_access_token = create_access_token(identity=current_user_id)
     response = jsonify({"message": "Token refreshed"})
     set_access_cookies(response, new_access_token)
     return response, 200
+
+@auth_bp.route("/user-data", methods=["GET"])
+@jwt_required()
+def user_data():
+    current_user_id = int(get_jwt_identity())
+    try:
+        user = User.query.filter_by(id=current_user_id).first
+        return jsonify({"email": user.email, "nickname": user.nickname}), 200
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
@@ -24,14 +36,6 @@ def logout():
     response = jsonify({"message": "Logout successful"})
     unset_jwt_cookies(response)
     return response, 200
-
-# historia zeskanowanych produktow (/history) -> (scan_history, product info)
-@auth_bp.route("/protected", methods=["GET"])
-@jwt_required()
-def protected():
-    current_user_id = int(get_jwt_identity())
-    current_user = User.query.get(current_user_id)
-    return jsonify({"message": f"Hello, {current_user.nickname}!"}), 200
 
 @auth_bp.route("/scan-history", methods=["GET"])
 @jwt_required()
@@ -43,3 +47,5 @@ def scan_history():
         return jsonify({"error": "Product not found"}), 404
 
     return jsonify(scan_history_product_to_list_dict(result)), 200
+
+
