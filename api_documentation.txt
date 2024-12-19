@@ -4,7 +4,7 @@ no autorization required:
 GET
 /products/get_by_id_list?ids=1,2,3
 400 -> {"error": "Invalid input"}
-500 -> {"error": "something went wrong", "details": "error message"}
+500 -> {"error": "something went wrong"}
 200 -> {
     [
         {
@@ -23,7 +23,7 @@ GET
 GET
 /products/{int id}
 404 -> {"error": "Product not found"}
-500 -> {"error": "something went wrong", "details": "error message"}
+500 -> {"error": "something went wrong"}
 200 -> {
     "id": int,
     "name": string,
@@ -38,7 +38,7 @@ GET
 GET
 /products/get_by_barcode?barcode=1234567890123
 404 -> {"error": "Product not found"}
-500 -> {"error": "something went wrong", "details": "error message"}
+500 -> {"error": "something went wrong"}
 200 -> {
     "id": int,
     "name": string,
@@ -76,7 +76,7 @@ POST
 /register (email, password, nickname)
 400 -> {"error": "Invalid input"}, e.g. missing email, zero length etc.
 409 -> {"error": "email/nickname already exists"}
-500 -> {"error": "something went wrong", "details": "error message"}
+500 -> {"error": "something went wrong"}
 201 -> {"message": "User created"}
 
 

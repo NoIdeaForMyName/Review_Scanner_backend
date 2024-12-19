@@ -14,11 +14,14 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    current_user_id = int(get_jwt_identity())
-    new_access_token = create_access_token(identity=current_user_id)
-    response = jsonify({"message": "Token refreshed"})
-    set_access_cookies(response, new_access_token)
-    return response, 200
+    try:
+        current_user_id = int(get_jwt_identity())
+        new_access_token = create_access_token(identity=current_user_id)
+        response = jsonify({"message": "Token refreshed"})
+        set_access_cookies(response, new_access_token)
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @auth_bp.route("/user-data", methods=["GET"])
 @jwt_required()
@@ -28,7 +31,7 @@ def user_data():
         user = User.query.filter_by(id=current_user_id).first
         return jsonify({"email": user.email, "nickname": user.nickname}), 200
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
@@ -41,11 +44,12 @@ def logout():
 @jwt_required()
 def scan_history():
     current_user_id = int(get_jwt_identity())
-    result = get_user_scan_history(current_user_id)
+    try:
+        result = get_user_scan_history(current_user_id)
 
-    if not result:
-        return jsonify({"error": "Product not found"}), 404
+        if not result:
+            return jsonify({"error": "history not found"}), 404
 
-    return jsonify(scan_history_product_to_list_dict(result)), 200
-
-
+        return jsonify(scan_history_product_to_list_dict(result)), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

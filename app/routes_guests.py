@@ -28,7 +28,7 @@ def get_products_by_id_list():
                 result.append(product_reviews_to_dict(*product_data))
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 @main_bp.route("/products/<int:product_id>", methods=["GET"])
 def get_product(product_id):
@@ -47,7 +47,7 @@ def get_product(product_id):
         return jsonify(product_reviews_to_dict(*result)), 200
 
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @main_bp.route("/products/get-by-barcode", methods=["GET"])
@@ -68,7 +68,7 @@ def get_product_barcode():
         return jsonify(product_reviews_to_dict(*result)), 200
 
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -107,26 +107,29 @@ def register():
         db.session.commit()
         return jsonify({"message": "User registered successfully"}), 201
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @main_bp.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    email = data.get("email").lower()
-    password_raw = data.get("password")
+    try:
+        data = request.get_json()
+        email = data.get("email").lower()
+        password_raw = data.get("password")
 
-    if not email or not password_raw:
-        return jsonify({"error": "Invalid data"}), 400
+        if not email or not password_raw:
+            return jsonify({"error": "Invalid data"}), 400
 
-    user = User.query.filter_by(email=email).first()
-    if not user or user.password != hash_password(password_raw, user.salt):
-        return jsonify({"error": "Invalid credentials"}), 401
+        user = User.query.filter_by(email=email).first()
+        if not user or user.password != hash_password(password_raw, user.salt):
+            return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=str(user.id))
-    refresh_token = create_refresh_token(identity=str(user.id))
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
 
-    response = jsonify({"email": email, "nickname": user.nickname})
-    set_access_cookies(response, access_token)
-    set_refresh_cookies(response, refresh_token)
-    return response, 200
+        response = jsonify({"email": email, "nickname": user.nickname})
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
