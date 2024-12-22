@@ -2,6 +2,7 @@ from decimal import Decimal
 import hashlib
 from typing import Union
 from sqlalchemy import Row, func
+from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.orm import joinedload
 from app.models import db, User, Product, Review, ReviewMedia, Shop, ScanHistory
 from flask import jsonify
@@ -69,7 +70,7 @@ def get_product_with_stats_by_barcode(barcode: str) -> Union[None, Row[tuple[Pro
     return (
         db.session.query(
             Product,
-            func.avg(Review.review_grade).label("avg_grade"),
+            coalesce(func.avg(Review.review_grade), 0.0).label("avg_grade"),
             func.count(Review.review_grade).label("review_count")
         )
         .outerjoin(Review, Review.review_product_fk == Product.id)
@@ -85,7 +86,7 @@ def get_user_scan_history(user_id: int) -> Union[None, list[tuple[Product, float
     return (
         db.session.query(
             Product,
-            func.avg(Review.review_grade).label("avg_grade"),
+            coalesce(func.avg(Review.review_grade), 0.0).label("avg_grade"),
             func.count(Review.review_grade).label("review_count"),
             ScanHistory.scan_timestamp #.label("scan_timestamp")
         )
