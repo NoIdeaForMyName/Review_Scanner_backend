@@ -65,7 +65,7 @@ class ReviewMedia(db.Model):
     review = db.relationship("Review", back_populates="media", lazy="joined")
 
 
-# Scan History table
+# Scan History table - we are storing only the last scan of a specific product in DB (if such product was already scanned - its timestamp is updated)
 class ScanHistory(db.Model):
     __tablename__ = "Scan_history"
     scan_history_user_fk = db.Column(db.Integer, db.ForeignKey("Users.id", onupdate="CASCADE", ondelete="RESTRICT"), primary_key=True, nullable=False)
