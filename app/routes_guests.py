@@ -1,6 +1,6 @@
 import hashlib
 import os
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request, send_from_directory, redirect
 from sqlalchemy.exc import SQLAlchemyError
 from config import UPLOAD_DIR
 from app.models import db, User, Product, Review, ReviewMedia
@@ -139,8 +139,9 @@ def login():
 @main_bp.route("/uploads/<path:filename>", methods=["GET"])
 def download(filename):
     try:
-        absolute_dir= os.path.join(os.getcwd(), UPLOAD_DIR)
-        print("full path:", os.path.join(absolute_dir, filename))
-        return send_from_directory(absolute_dir, filename, as_attachment=True)
+        # absolute_dir= os.path.join(os.getcwd(), "uploads")
+        # print("full path:", os.path.join(absolute_dir, filename))
+        # return send_from_directory(absolute_dir, filename, as_attachment=True)
+        return redirect(f'https://yavuzceliker.github.io/sample-images/{filename}') # for testing purposes
     except Exception as e:
         return jsonify({"error": str(e)}), 500
