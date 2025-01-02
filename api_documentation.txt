@@ -1,12 +1,10 @@
-no autorization required:
-
+NO AUTHORIZATION REQUIRED:
 
 GET
-/products/get-by-id-list?ids=1,2,3
-400 -> {"error": "Invalid input"}
-500 -> {"error": "something went wrong"}
-200 -> {
-    [
+    /products/get-by-id-list?ids=1,2,3
+    400 -> {"error": "Invalid input"}
+    500 -> {"error": "something went wrong"}
+    200 -> [
         {
             "id": int,
             "name": string,
@@ -14,78 +12,238 @@ GET
             "image": string,
             "barcode": string,
             "average_grade": float,
-            "grade_count": int,
+            "grade_count": int
         },
+        ...
     ]
-}
-
 
 GET
-/products/{int id}
-404 -> {"error": "Product not found"}
-500 -> {"error": "something went wrong"}
-200 -> {
-    "id": int,
-    "name": string,
-    "description": string,
-    "image": string,
-    "barcode": string,
-    "average_grade": float,
-    "grade_count": int,
-}
-
-
-GET
-/products/get-by-barcode?barcode=1234567890123
-404 -> {"error": "Product not found"}
-500 -> {"error": "something went wrong"}
-200 -> {
-    "id": int,
-    "name": string,
-    "description": string,
-    "image": string,
-    "barcode": string,
-    "average_grade": float,
-    "grade_count": int,
-    "reviews" : {
+    /products/{int id}
+    404 -> {"error": "Product not found"}
+    500 -> {"error": "something went wrong"}
+    200 -> {
         "id": int,
-        "user": {
-            "id": int,
-            "email": string,
-            "nickname": string,
-        }
-        "product_id": int,
-        "product_name": string,
-        "grade": int,
-        "title": string,
+        "name": string,
         "description": string,
-        "price": string,
-        "shop": {
-            "id": int,
-            "name": string,
-        },
-        "media": {
-            "id": int,
-            "url": string,
-        },
+        "image": string,
+        "barcode": string,
+        "average_grade": float,
+        "grade_count": int,
+        "reviews": [
+            {
+                "id": int,
+                "user": {
+                    "id": int,
+                    "email": string,
+                    "nickname": string
+                },
+                "product_id": int,
+                "product_name": string,
+                "grade": int,
+                "title": string,
+                "description": string,
+                "price": float,
+                "shop": {
+                    "id": int,
+                    "name": string
+                },
+                "media": [
+                    {
+                        "id": int,
+                        "url": string
+                    }
+                ]
+            },
+            ...
+        ]
     }
-}
 
+GET
+    /products/get-by-barcode?barcode=1234567890123
+    404 -> {"error": "Product not found"}
+    500 -> {"error": "something went wrong"}
+    200 -> {
+        "id": int,
+        "name": string,
+        "description": string,
+        "image": string,
+        "barcode": string,
+        "average_grade": float,
+        "grade_count": int,
+        "reviews": [
+            {
+                "id": int,
+                "user": {
+                    "id": int,
+                    "email": string,
+                    "nickname": string
+                },
+                "product_id": int,
+                "product_name": string,
+                "grade": int,
+                "title": string,
+                "description": string,
+                "price": float,
+                "shop": {
+                    "id": int,
+                    "name": string
+                },
+                "media": [
+                    {
+                        "id": int,
+                        "url": string
+                    }
+                ]
+            },
+            ...
+        ]
+    }
 
 POST
-/register (email, password, nickname)
-400 -> {"error": "Invalid input"}, e.g. missing email, zero length etc.
-409 -> {"error": "email/nickname already exists"}
-500 -> {"error": "something went wrong"}
-201 -> {"message": "User created"}
+    /register
+    (JSON body)
+    {
+        "email": string,
+        "password": string,
+        "nickname": string
+    }
+    400 -> {"error": "Invalid input"}
+    409 -> {"error": "email/nickname already exists"}
+    500 -> {"error": "something went wrong"}
+    201 -> {"message": "User created"}
 
+POST
+    /login
+    (JSON body)
+    {
+        "email": string,
+        "password": string
+    }
+    400 -> {"error": "Invalid input"}
+    401 -> {"error": "Invalid credentials"}
+    500 -> {"error": "something went wrong"}
+    200 -> {
+        "email": string,
+        "nickname": string
+    }
 
+GET
+    /uploads/{filename}
+    500 -> {"error": "something went wrong"}
+    200 -> Returns the file as an attachment
 
 
 --------------------------------------------------------------------------------
 
+AUTHORIZATION REQUIRED:
 
+POST
+    /refresh
+    (No additional JSON body required, refresh token comes from cookies)
+    500 -> {"error": "something went wrong"}
+    200 -> {"message": "Token refreshed"}
 
+GET
+    /user-data
+    500 -> {"error": "something went wrong"}
+    200 -> {
+        "email": string,
+        "nickname": string
+    }
 
-autorization required:
+POST
+    /logout
+    200 -> {"message": "Logout successful"}
 
+GET
+    /scan-history
+    404 -> {"error": "history not found"}
+    500 -> {"error": "something went wrong"}
+    200 -> [
+        {
+            "id": int,
+            "name": string,
+            "description": string,
+            "image": string,
+            "barcode": string,
+            "average_grade": float,
+            "grade_count": int
+        },
+        ...
+    ]
+
+GET
+    /my-reviews
+    404 -> {"error": "reviews not found"}
+    500 -> {"error": "something went wrong"}
+    200 -> [
+        {
+            "id": int,
+            "user": {
+                "id": int,
+                "email": string,
+                "nickname": string
+            },
+            "product_id": int,
+            "product_name": string,
+            "grade": int,
+            "title": string,
+            "description": string,
+            "price": float,
+            "shop": {
+                "id": int,
+                "name": string
+            },
+            "media": [
+                {
+                    "id": int,
+                    "url": string
+                }
+            ]
+        },
+        ...
+    ]
+
+POST
+    /add-to-history
+    (JSON body)
+    {
+        "barcode": string,  -- or
+        "id": int
+    }
+    400 -> {"error": "Invalid data"}
+    404 -> {"error": "Product not found"}
+    409 -> {"error": "Product already in history"}
+    500 -> {"error": "something went wrong"}
+    201 -> {"message": "Product added to history"}
+
+POST
+    /add-product
+    (JSON body)
+    {
+        "barcode": string,
+        "name": string,
+        "description": string,
+        "image_base64": string
+    }
+    400 -> {"error": "Invalid data"}
+    409 -> {"error": "Product already exists"}
+    500 -> {"error": "something went wrong"}
+    201 -> {"message": "Product added successfully"}
+
+POST
+    /add-review
+    (JSON body)
+    {
+        "product_id": int,
+        "grade": int,
+        "title": string,
+        "description": string,
+        "price": float,
+        "shop_name": string,
+        "images_base64": [string, ...]
+    }
+    400 -> {"error": "Invalid data"}
+    409 -> {"error": "Review already exists"}
+    500 -> {"error": "something went wrong"}
+    201 -> {"message": "Review added successfully"}
