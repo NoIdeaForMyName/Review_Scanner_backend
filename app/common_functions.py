@@ -93,6 +93,10 @@ def get_user_scan_history(user_id: int) -> Union[None, list[tuple[Product, float
         .outerjoin(ScanHistory, ScanHistory.scan_history_product_fk == Product.id)
         .outerjoin(Review, Review.review_product_fk == Product.id)
         .filter(ScanHistory.scan_history_user_fk == user_id)
+                .group_by(
+            Product.id,  # Group by Product primary key
+            ScanHistory.scan_timestamp,  # Group by ScanHistory timestamp
+        )
         .all()
     )
 

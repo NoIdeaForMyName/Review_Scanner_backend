@@ -2,7 +2,7 @@ no autorization required:
 
 
 GET
-/products/get_by_id_list?ids=1,2,3
+/products/get-by-id-list?ids=1,2,3
 400 -> {"error": "Invalid input"}
 500 -> {"error": "something went wrong"}
 200 -> {
@@ -36,7 +36,7 @@ GET
 
 
 GET
-/products/get_by_barcode?barcode=1234567890123
+/products/get-by-barcode?barcode=1234567890123
 404 -> {"error": "Product not found"}
 500 -> {"error": "something went wrong"}
 200 -> {

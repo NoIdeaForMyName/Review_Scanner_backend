@@ -4,6 +4,8 @@ uploads/*
 !uploads/.gitignore
 *__pycache__/*
 */__pycache__/*
+venv
+tmp_scripts
 
 # temporary files
 TODO.txt
