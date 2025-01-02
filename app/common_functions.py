@@ -1,5 +1,8 @@
 from decimal import Decimal
 import hashlib
+import numpy as np
+from PIL import Image
+from config import MAX_UPLOAD_SIZE
 from typing import Union
 from sqlalchemy import Row, func
 from sqlalchemy.sql.functions import coalesce
@@ -114,3 +117,15 @@ def hash_password(password: str, salt: str) -> str:
     Hash a password using a salt.
     """
     return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
+
+def resize_image(image: Image.Image) -> Image.Image:
+    """
+    Resize an image to a specific size.
+    """
+    ratios = np.array(image.size) / np.array(MAX_UPLOAD_SIZE)
+
+    if max(ratios) > 1.0:
+        max_ratio  = max(ratios)
+        new_size = tuple((np.array(image.size) / max_ratio).astype(int))
+        image = image.resize(new_size, Image.Resampling.LANCZOS)
+    return image

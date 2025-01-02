@@ -3,12 +3,13 @@ import base64
 import os
 import io
 import numpy as np
+from datetime import datetime
 from PIL import Image
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 from config import MAX_UPLOAD_SIZE, UPLOAD_DIR
-from app.models import db, User, Product, Review, ReviewMedia, ScanHistory
-from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password, get_user_scan_history, scan_history_product_to_list_dict
+from app.models import db, User, Product, Review, ReviewMedia, ScanHistory, Shop
+from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password, get_user_scan_history, resize_image, review_to_dict, scan_history_product_to_list_dict
 from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, jwt_required, get_jwt_identity, unset_jwt_cookies
 
 auth_bp = Blueprint('auth', __name__)
@@ -56,6 +57,20 @@ def scan_history():
             return jsonify({"error": "history not found"}), 404
 
         return jsonify(scan_history_product_to_list_dict(result)), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@auth_bp.route("/my-reviews", methods=["GET"])
+@jwt_required()
+def my_reviews():
+    current_user_id = int(get_jwt_identity())
+    try:
+        results = Review.query.filter_by(reviews_user_fk=current_user_id).all()
+
+        if not results:
+            return jsonify({"error": "reviews not found"}), 404
+
+        return jsonify([review_to_dict(result) for result in results]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -125,12 +140,7 @@ def add_product():
             return jsonify({"error": f"Base64 decoding failed: {str(e)}"}), 400
         
         image = Image.open(io.BytesIO(image_bytes))
-
-        ratios = np.array(image.size) / np.array(MAX_UPLOAD_SIZE)
-        if max(ratios) > 1.0:
-            max_ratio  = max(ratios)
-            new_size = tuple((np.array(image.size) / max_ratio).astype(int))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
+        image = resize_image(image)
         
         product_db = Product(
             product_barcode=barcode,
@@ -140,13 +150,97 @@ def add_product():
         )
 
         db.session.add(product_db)
-        db.session.commit()
+        db.session.flush()
         product_id = product_db.id
         image_filename = f"prod_{product_id}.jpg"
         product_db.product_image = image_filename
-        db.session.commit()
 
         image.save(os.path.join(UPLOAD_DIR, image_filename), "JPEG")
+        db.session.commit()
         return jsonify({"message": "Product added successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@auth_bp.route("/add-review", methods=["POST"])
+@jwt_required()
+def add_review():
+    current_user_id = int(get_jwt_identity())
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "Invalid data"}), 400
+
+        prod_id = data.get("product_id")
+        grade = data.get("grade")
+        title = data.get("title")
+        description = data.get("description")
+        price = data.get("price")
+        shop_name = data.get("shop_name")
+        images_base64 = data.get("images_base64")
+
+        if not all([prod_id, grade, title, description, price, shop_name, images_base64]):
+            return jsonify({"error": "Invalid data"}), 400
+        
+        prod_id = int(prod_id)
+        grade = int(grade)
+        price = float(price)
+        title = title.strip()
+        description = description.strip()
+        shop_name = shop_name.strip()
+        images_base64 = [str(image) for image in images_base64]
+
+        product = Product.query.filter_by(id=prod_id).first()
+        if not product:
+            return jsonify({"error": "Product doesnt exist"}), 409
+        
+        # find review for this product by this user
+        review = Review.query.filter_by(reviews_user_fk=current_user_id, review_product_fk=prod_id).first()
+        if review:
+            return jsonify({"error": "Review already exists"}), 409
+
+        # check if shop name exists
+        shop = Shop.query.filter_by(shop_name=shop_name).first()
+        if not shop:
+            shop = Shop(shop_name=shop_name)
+            db.session.add(shop)
+            db.session.flush() 
+        
+        # add review
+        review = Review(
+            reviews_user_fk=current_user_id,
+            review_product_fk=prod_id,
+            review_grade=grade,
+            review_title=title,
+            review_description=description,
+            review_price=price,
+            review_shop_fk=shop.id
+        )
+        db.session.add(review)
+        db.session.flush()
+        # get this review pk
+        review_id = review.id
+        
+        try:
+            images_bytes = [base64.b64decode(image_base64) for image_base64 in images_base64]
+        except Exception as e:
+            return jsonify({"error": f"Base64 decoding failed: {str(e)}"}), 400
+        
+        for image_bytes in images_bytes:
+            image = Image.open(io.BytesIO(image_bytes))
+            review_media = ReviewMedia(
+                media_review_fk=review_id,
+                media_path="place_holder.jpg"
+            )
+            db.session.add(review_media)
+            db.session.flush()
+            review_media_id = review_media.id
+            image_filename = f"rev_{review_id}_{review_media_id}.jpg"
+            image = resize_image(image)
+            image.save(os.path.join(UPLOAD_DIR, image_filename), "JPEG")
+            review_media.media_path = image_filename
+
+        db.session.commit()
+        return jsonify({"message": "Review added successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
