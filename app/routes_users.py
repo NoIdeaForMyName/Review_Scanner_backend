@@ -96,15 +96,18 @@ def add_to_history():
         # find if the product is already in the history
         scan_history = ScanHistory.query.filter_by(scan_history_user_fk=current_user_id, scan_history_product_fk=result.id).first()
         if scan_history:
-            return jsonify({"error": "Product already in history"}), 409
-
-        scan_history = ScanHistory(
-            scan_history_user_fk=current_user_id,
-            scan_history_product_fk=result.id
-        )
-        db.session.add(scan_history)
+            scan_history.scan_timestamp = datetime.now()
+            message = "Updated history"
+        else:
+            scan_history = ScanHistory(
+                scan_history_user_fk=current_user_id,
+                scan_history_product_fk=result.id,
+                scan_timestamp=datetime.now()
+            )
+            db.session.add(scan_history)
+            message = "Added to history"
         db.session.commit()
-        return jsonify({"message": "Product added to history"}), 201
+        return jsonify({"message": message}), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

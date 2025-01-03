@@ -200,7 +200,7 @@ GET
     ]
 
 POST
-    /add-to-history
+    /add-to-history  -- adds product to scan history or updates timestamp if already in history
     (JSON body)
     {
         "barcode": string,  -- or
