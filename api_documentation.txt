@@ -161,13 +161,8 @@ GET
     500 -> {"error": "something went wrong"}
     200 -> [
         {
-            "id": int,
-            "name": string,
-            "description": string,
-            "image": string,
-            "barcode": string,
-            "average_grade": float,
-            "grade_count": int
+            "id": int,  -- product id
+            "timestamp": int,
         },
         ...
     ]

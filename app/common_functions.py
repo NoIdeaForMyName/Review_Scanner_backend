@@ -82,26 +82,26 @@ def get_product_with_stats_by_barcode(barcode: str) -> Union[None, Row[tuple[Pro
         .first()
     )
 
-def get_user_scan_history(user_id: int) -> Union[None, list[tuple[Product, float, int, datetime]]]:
-    """
-    Fetch specific user scan history with product details.
-    """
-    return (
-        db.session.query(
-            Product,
-            coalesce(func.avg(Review.review_grade), 0.0).label("avg_grade"),
-            func.count(Review.review_grade).label("review_count"),
-            ScanHistory.scan_timestamp #.label("scan_timestamp")
-        )
-        .outerjoin(ScanHistory, ScanHistory.scan_history_product_fk == Product.id)
-        .outerjoin(Review, Review.review_product_fk == Product.id)
-        .filter(ScanHistory.scan_history_user_fk == user_id)
-                .group_by(
-            Product.id,  # Group by Product primary key
-            ScanHistory.scan_timestamp,  # Group by ScanHistory timestamp
-        )
-        .all()
-    )
+# def get_user_scan_history(user_id: int) -> Union[None, list[tuple[Product, float, int, datetime]]]:
+#     """
+#     Fetch specific user scan history with product details.
+#     """
+#     return (
+#         db.session.query(
+#             Product,
+#             coalesce(func.avg(Review.review_grade), 0.0).label("avg_grade"),
+#             func.count(Review.review_grade).label("review_count"),
+#             ScanHistory.scan_timestamp #.label("scan_timestamp")
+#         )
+#         .outerjoin(ScanHistory, ScanHistory.scan_history_product_fk == Product.id)
+#         .outerjoin(Review, Review.review_product_fk == Product.id)
+#         .filter(ScanHistory.scan_history_user_fk == user_id)
+#                 .group_by(
+#             Product.id,  # Group by Product primary key
+#             ScanHistory.scan_timestamp,  # Group by ScanHistory timestamp
+#         )
+#         .all()
+#     )
 
 def scan_history_product_to_dict(prod: Product, avg_g: float, avg_c: int, scan_timestamp: datetime) -> dict:
     return {**product_short_to_dict(prod, avg_g, avg_c), "scan_timestamp": scan_timestamp}
