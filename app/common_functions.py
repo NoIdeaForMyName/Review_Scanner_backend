@@ -62,7 +62,7 @@ def product_short_to_dict(product: Product, avg_grade: float, grade_count: int) 
 def get_product_with_stats(product_id: int) -> Union[None, Row[tuple[Product, float, int]]]:
     return db.session.query(
         Product,
-        func.avg(Review.review_grade).label("avg_grade"),
+        coalesce(func.avg(Review.review_grade), 0.0).label("avg_grade"),
         func.count(Review.review_grade).label("review_count")
     ).outerjoin(Review, Review.review_product_fk == Product.id).filter(Product.id == product_id).group_by(Product.id).first()
 
