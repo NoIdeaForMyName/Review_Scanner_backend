@@ -140,6 +140,21 @@ def login():
 def download(filename):
     try:
         absolute_dir= os.path.join(os.getcwd(), "uploads")
+        print("full path:", os.path.join(absolute_dir, filename))
         return send_from_directory(absolute_dir, filename, as_attachment=True)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+'''
+FOR TESTING PURPOSES
+if you are using database filler to mock the data, comment endpoint above and uncomment this one
+
+@main_bp.route("/uploads/<path:filename>", methods=["GET"])
+def download(filename):
+    try:
+        from random import randint
+        #filename = f'image-{randint(1, 700)}'
+        return redirect(f'https://yavuzceliker.github.io/sample-images/{filename}')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+'''
