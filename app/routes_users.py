@@ -81,10 +81,11 @@ def add_to_history():
         data = request.get_json()
         barcode = data.get("barcode")
         prod_id = data.get("id")
+        timestamp = data.get("timestamp")
 
-        if barcode:
+        if barcode and timestamp:
             result = Product.query.filter_by(product_barcode=str(barcode)).first()
-        elif prod_id:
+        elif prod_id and timestamp:
             result = Product.query.filter_by(id=int(prod_id)).first()
         else:
             return jsonify({"error": "Invalid data"}), 400        
@@ -96,13 +97,13 @@ def add_to_history():
         # find if the product is already in the history
         scan_history = ScanHistory.query.filter_by(scan_history_user_fk=current_user_id, scan_history_product_fk=result.id).first()
         if scan_history:
-            scan_history.scan_timestamp = datetime.now()
+            scan_history.scan_timestamp = timestamp
             message = "Updated history"
         else:
             scan_history = ScanHistory(
                 scan_history_user_fk=current_user_id,
                 scan_history_product_fk=result.id,
-                scan_timestamp=datetime.now()
+                scan_timestamp=timestamp
             )
             db.session.add(scan_history)
             message = "Added to history"
