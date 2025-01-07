@@ -8,8 +8,10 @@ RUN_CONFIG = {
     "port": 5000
 }
 
+UPLOAD_DIR = "uploads"
 UPLOAD_URL = f"http://{RUN_CONFIG['host']}:{RUN_CONFIG['port']}/uploads/"
 MAX_UPLOAD_SIZE = (1024, 1024) # (width, height)
+DATETIME_FORMAT = "%d.%m.%Y"
 
 class Config:
     SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost:5432/mydatabase'  # Replace with actual credentials

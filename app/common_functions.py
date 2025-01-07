@@ -2,8 +2,8 @@ from decimal import Decimal
 import hashlib
 import numpy as np
 from PIL import Image
-from config import MAX_UPLOAD_SIZE
-from typing import Union
+from config import DATETIME_FORMAT, MAX_UPLOAD_SIZE
+from typing import Tuple, Union
 from sqlalchemy import Row, func
 from sqlalchemy.sql.functions import coalesce
 from sqlalchemy.orm import joinedload
@@ -44,12 +44,6 @@ def review_to_dict(review: Review) -> dict:
 
 def product_reviews_to_dict(product: Product, avg_grade: float, grade_count: int) -> dict:
     return {
-        **product_short_to_dict(product, avg_grade, grade_count),
-        'reviews': [review_to_dict(review) for review in product.reviews]
-    }
-
-def product_short_to_dict(product: Product, avg_grade: float, grade_count: int) -> dict:
-    return {
         'id': int(product.id),
         'name': product.product_name,
         'description': product.product_description,
@@ -57,6 +51,7 @@ def product_short_to_dict(product: Product, avg_grade: float, grade_count: int) 
         'barcode': product.product_barcode,
         'average_grade': float(avg_grade),
         'grade_count': int(grade_count),
+        'reviews': [review_to_dict(review) for review in product.reviews]
     }
 
 def get_product_with_stats(product_id: int) -> Union[None, Row[tuple[Product, float, int]]]:
@@ -104,7 +99,43 @@ def get_product_with_stats_by_barcode(barcode: str) -> Union[None, Row[tuple[Pro
 #     )
 
 def scan_history_product_to_dict(prod: Product, avg_g: float, avg_c: int, scan_timestamp: datetime) -> dict:
-    return {**product_short_to_dict(prod, avg_g, avg_c), "scan_timestamp": scan_timestamp}
+    return {**product_reviews_to_dict(prod, avg_g, avg_c), "scan_timestamp": scan_timestamp}
+
+def add_to_scan_history(entry, current_user_id) -> Tuple[dict, int]:
+    """
+    Add a product to the scan history of a user.
+    """
+    barcode = entry.get("barcode")
+    prod_id = entry.get("id")
+    timestamp = entry.get("timestamp")
+
+    if barcode and timestamp:
+        result = Product.query.filter_by(product_barcode=str(barcode)).first()
+    elif prod_id and timestamp:
+        result = Product.query.filter_by(id=int(prod_id)).first()
+    else:
+        return {"error": "Invalid data"}, 400
+
+    # Handle case where product is not found
+    if not result:
+        return {"error": "Product not found"}, 404
+    
+    # find if the product is already in the history
+    scan_history = ScanHistory.query.filter_by(scan_history_user_fk=current_user_id, scan_history_product_fk=result.id).first()
+    
+    timestamp_datetime = datetime.strptime(timestamp, DATETIME_FORMAT)
+    if scan_history:
+        scan_history.scan_timestamp = timestamp
+        message = "Updated history"
+    else:
+        scan_history = ScanHistory(
+            scan_history_user_fk=current_user_id,
+            scan_history_product_fk=result.id,
+            scan_timestamp=timestamp_datetime
+        )
+        db.session.add(scan_history)
+        message = "Added to history"
+    return {"message": message}, 201
 
 def scan_history_product_to_list_dict(product_timestamp_list):
     return [scan_history_product_to_dict(*e) for e in product_timestamp_list]

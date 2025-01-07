@@ -12,7 +12,8 @@ GET
             "image": string,
             "barcode": string,
             "average_grade": float,
-            "grade_count": int
+            "grade_count": int,
+            "reviews": ...
         },
         ...
     ]
@@ -161,11 +162,12 @@ GET
     500 -> {"error": "something went wrong"}
     200 -> [
         {
-            "id": int,  -- product id
-            "timestamp": int,
+            "id": int,  -- product id 
+            "timestamp": datetime in format specified in config.py
         },
         ...
     ]
+
 
 GET
     /my-reviews
@@ -205,12 +207,28 @@ POST
     {
         "barcode": string,  -- or
         "id": int
+        "timestamp": datetime in format specified in config.py
     }
     400 -> {"error": "Invalid data"}
     404 -> {"error": "Product not found"}
     409 -> {"error": "Product already in history"}
     500 -> {"error": "something went wrong"}
     201 -> {"message": "Product added to history"}
+
+POST
+    /add-list-to-history  -- adds product to scan history or updates timestamp if already in history
+    (JSON body)
+    [
+        {
+            "barcode": string,  -- or
+            "id": int
+            "timestamp": datetime in format specified in config.py
+        },
+    ]
+    400 -> {"error": "Invalid data"}
+    404 -> {"error": "Product not found"}
+    500 -> {"error": "something went wrong"}
+    201 -> {"message": "all products added to history"}
 
 POST
     /add-product

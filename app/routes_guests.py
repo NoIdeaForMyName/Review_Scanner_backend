@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request, send_from_directory, redirect
 from sqlalchemy.exc import SQLAlchemyError
 from config import UPLOAD_URL
 from app.models import db, User, Product, Review, ReviewMedia
-from app.common_functions import product_short_to_dict, get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password
+from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password
 from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, jwt_required, get_jwt_identity
 
 main_bp = Blueprint('main', __name__)
@@ -27,7 +27,7 @@ def get_products_by_id_list():
         for product_id in product_ids:
             product_data = get_product_with_stats(product_id)
             if product_data:
-                result.append(product_short_to_dict(*product_data))
+                result.append(product_reviews_to_dict(*product_data))
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -135,6 +135,7 @@ def login():
         return response, 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @main_bp.route("/uploads/<path:filename>", methods=["GET"])
 def download(filename):

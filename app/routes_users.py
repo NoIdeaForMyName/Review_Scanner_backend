@@ -7,9 +7,9 @@ from datetime import datetime
 from PIL import Image
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
-from config import MAX_UPLOAD_SIZE, UPLOAD_URL
+from config import DATETIME_FORMAT, MAX_UPLOAD_SIZE, UPLOAD_URL
 from app.models import db, User, Product, Review, ReviewMedia, ScanHistory, Shop
-from app.common_functions import get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password, resize_image, review_to_dict, scan_history_product_to_list_dict
+from app.common_functions import add_to_scan_history, get_product_with_stats, get_product_with_stats_by_barcode, product_reviews_to_dict, hash_password, resize_image, review_to_dict, scan_history_product_to_list_dict
 from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, jwt_required, get_jwt_identity, unset_jwt_cookies
 
 auth_bp = Blueprint('auth', __name__)
@@ -52,7 +52,7 @@ def scan_history():
     current_user_id = int(get_jwt_identity())
     try:
         scan_histories = ScanHistory.query.filter_by(scan_history_user_fk=current_user_id).order_by(ScanHistory.scan_timestamp.desc()).all()
-        scan_dict = [{"id": scan.scan_history_product_fk, "timestamp": scan.scan_timestamp} for scan in scan_histories]
+        scan_dict = [{"id": scan.scan_history_product_fk, "timestamp": scan.scan_timestamp.strftime(DATETIME_FORMAT)} for scan in scan_histories]
 
         return jsonify(scan_dict), 200
     except Exception as e:
@@ -79,40 +79,28 @@ def add_to_history():
         current_user_id = int(get_jwt_identity())
         # Determine if the identifier is numeric (ID) or not (barcode)
         data = request.get_json()
-        barcode = data.get("barcode")
-        prod_id = data.get("id")
-        timestamp = data.get("timestamp")
-
-        if barcode and timestamp:
-            result = Product.query.filter_by(product_barcode=str(barcode)).first()
-        elif prod_id and timestamp:
-            result = Product.query.filter_by(id=int(prod_id)).first()
-        else:
-            return jsonify({"error": "Invalid data"}), 400        
-
-        # Handle case where product is not found
-        if not result:
-            return jsonify({"error": "Product not found"}), 404
-        
-        # find if the product is already in the history
-        scan_history = ScanHistory.query.filter_by(scan_history_user_fk=current_user_id, scan_history_product_fk=result.id).first()
-        if scan_history:
-            scan_history.scan_timestamp = timestamp
-            message = "Updated history"
-        else:
-            scan_history = ScanHistory(
-                scan_history_user_fk=current_user_id,
-                scan_history_product_fk=result.id,
-                scan_timestamp=timestamp
-            )
-            db.session.add(scan_history)
-            message = "Added to history"
-        db.session.commit()
-        return jsonify({"message": message}), 201
-
+        message, result = add_to_scan_history(data, current_user_id)
+        if result == 201:
+            db.session.commit()
+        return jsonify(message), result
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@auth_bp.route("/add-list-to-history", methods=["POST"])
+@jwt_required()
+def add_list_to_history():
+    try:
+        current_user_id = int(get_jwt_identity())
+        # Determine if the identifier is numeric (ID) or not (barcode)
+        data = request.get_json()
+        for entry in data:
+            message, result = add_to_scan_history(entry, current_user_id)
+            if result != 201:
+                return jsonify(message), result
+        db.session.commit()
+        return jsonify({"message": "All products added to history"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @auth_bp.route("/add-product", methods=["POST"])
 @jwt_required()
