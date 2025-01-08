@@ -169,7 +169,7 @@ def add_review():
         shop_name = data.get("shop_name")
         images_base64 = data.get("images_base64")
 
-        if not all([prod_id, grade, title, description, price, shop_name, images_base64]):
+        if not all([prod_id, grade, title, description, price, shop_name]):
             return jsonify({"error": "Invalid data"}), 400
         
         prod_id = int(prod_id)
