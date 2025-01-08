@@ -63,7 +63,7 @@ def scan_history():
 def my_reviews():
     current_user_id = int(get_jwt_identity())
     try:
-        results = Review.query.filter_by(reviews_user_fk=current_user_id).all()
+        results = Review.query.filter_by(reviews_user_fk=current_user_id).order_by(Review.review_timestamp.desc()).all()
 
         if not results:
             return jsonify({"error": "reviews not found"}), 404
@@ -108,7 +108,6 @@ def add_product():
     current_user_id = int(get_jwt_identity())
     try:
         data = request.get_json()
-        print(data)
 
         if not data:
             return jsonify({"error": "Invalid data"}), 400
@@ -126,10 +125,8 @@ def add_product():
             return jsonify({"error": "Product already exists"}), 409
         
         try:
-            print(image_base64)
             image_bytes = base64.b64decode(image_base64)
         except Exception as e:
-            print(e)
             return jsonify({"error": f"Base64 decoding failed: {str(e)}"}), 400
         
         image = Image.open(io.BytesIO(image_bytes))
@@ -189,8 +186,15 @@ def add_review():
         
         # find review for this product by this user
         review = Review.query.filter_by(reviews_user_fk=current_user_id, review_product_fk=prod_id).first()
+        images_to_remove = []
         if review:
-            return jsonify({"error": "Review already exists"}), 409
+            # return jsonify({"error": "Review already exists"}), 409
+            images_to_remove = [image.media_path for image in review.media]
+            # delete media
+            for image in review.media:
+                db.session.delete(image)
+            # delete review
+            db.session.delete(review)
 
         # check if shop name exists
         shop = Shop.query.filter_by(shop_name=shop_name).first()
@@ -234,6 +238,8 @@ def add_review():
             review_media.media_path = image_filename
 
         db.session.commit()
+        for image_path in images_to_remove:
+            os.remove(os.path.join(UPLOAD_DIR, image_path))
         return jsonify({"message": "Review added successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
