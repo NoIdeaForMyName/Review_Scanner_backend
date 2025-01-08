@@ -159,4 +159,6 @@ def resize_image(image: Image.Image) -> Image.Image:
         max_ratio  = max(ratios)
         new_size = tuple((np.array(image.size) / max_ratio).astype(int))
         image = image.resize(new_size, Image.Resampling.LANCZOS)
+    # change this image to remove channel alpha
+    image = image.convert("RGB")
     return image
