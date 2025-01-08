@@ -185,11 +185,11 @@ def add_review():
             return jsonify({"error": "Product doesnt exist"}), 409
         
         # find review for this product by this user
-        review = Review.query.filter_by(reviews_user_fk=current_user_id, review_product_fk=prod_id).first()
+        reviews = Review.query.filter_by(reviews_user_fk=current_user_id, review_product_fk=prod_id).all()
         images_to_remove = []
-        if review:
+        for review in reviews:
             # return jsonify({"error": "Review already exists"}), 409
-            images_to_remove = [image.media_path for image in review.media]
+            images_to_remove.extend([image.media_path for image in review.media])
             # delete media
             for image in review.media:
                 db.session.delete(image)
