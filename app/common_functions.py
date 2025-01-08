@@ -28,7 +28,7 @@ def review_to_dict(review: Review) -> dict:
         "grade": review.review_grade,
         "title": review.review_title,
         "description": review.review_description,
-        "price": Decimal(review.review_price),
+        "price": float(review.review_price),
         "shop": {
             "id": shop.id,
             "name": shop.shop_name,
