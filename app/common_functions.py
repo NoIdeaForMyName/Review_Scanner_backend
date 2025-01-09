@@ -43,6 +43,9 @@ def review_to_dict(review: Review) -> dict:
     }
 
 def product_reviews_to_dict(product: Product, avg_grade: float, grade_count: int) -> dict:
+    reviews_list = [review for review in product.reviews]
+    print([review.review_timestamp for review in reviews_list])
+    reviews_list.sort(key=lambda x: x.review_timestamp, reverse=True)
     return {
         'id': int(product.id),
         'name': product.product_name,
@@ -51,7 +54,7 @@ def product_reviews_to_dict(product: Product, avg_grade: float, grade_count: int
         'barcode': product.product_barcode,
         'average_grade': float(avg_grade),
         'grade_count': int(grade_count),
-        'reviews': [review_to_dict(review) for review in product.reviews]
+        'reviews': [review_to_dict(review) for review in reviews_list]
     }
 
 def get_product_with_stats(product_id: int) -> Union[None, Row[tuple[Product, float, int]]]:
