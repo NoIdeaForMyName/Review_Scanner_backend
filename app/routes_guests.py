@@ -18,7 +18,7 @@ def get_products_by_id_list():
         product_ids = request.args.get("ids")
 
         if not product_ids:
-            return jsonify({"error": "Invalid data"}), 400
+            return jsonify([]), 200
 
         product_ids = str(product_ids)
         product_ids = product_ids.split(",")
